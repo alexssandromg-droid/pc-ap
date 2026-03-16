@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PC-AP Elite - Plataforma de Alta Performance</title>
+    <title>Edital Dinâmico PC-AP - Master Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         
@@ -16,19 +17,20 @@
             --border-color: #e2e8f0;
         }
 
-        .dark-theme {
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f1f5f9;
-            --border-color: #334155;
-        }
-
         body { 
             background-color: var(--bg); 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             color: var(--text-main);
-            transition: background-color 0.3s ease, color 0.3s ease;
-            overflow-x: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        .subject-card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            overflow: hidden;
         }
 
         .tab-content { display: none; }
@@ -39,56 +41,92 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .day-card {
-            background-color: var(--card-bg);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid var(--border-color);
-        }
+        .progress-bar-fill { transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        .day-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        input[type="checkbox"], input[type="radio"] {
+        input[type="checkbox"] {
             appearance: none;
-            width: 1.25rem;
-            height: 1.25rem;
+            width: 1.35rem;
+            height: 1.35rem;
             border: 2px solid #cbd5e1;
             border-radius: 6px;
-            background-color: #fff;
+            cursor: pointer;
             display: grid;
             place-content: center;
-            cursor: pointer;
             transition: 0.2s all;
         }
 
-        input[type="radio"] { border-radius: 50%; }
-
-        input[type="checkbox"]::before, input[type="radio"]::before {
+        input[type="checkbox"]::before {
             content: "";
-            width: 0.70rem;
-            height: 0.70rem;
+            width: 0.75rem;
+            height: 0.75rem;
             transform: scale(0);
             transition: 120ms transform ease-in-out;
             box-shadow: inset 1em 1em var(--primary);
-        }
-        input[type="checkbox"]::before { clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
-        input[type="radio"]::before { border-radius: 50%; }
-
-        input[type="checkbox"]:checked, input[type="radio"]:checked { border-color: var(--primary); }
-        input[type="checkbox"]:checked::before, input[type="radio"]:checked::before { transform: scale(1); }
-
-        .progress-circle {
-            background: conic-gradient(var(--circle-color, #10b981) var(--progress), #e2e8f0 0deg);
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
         }
 
-        .custom-select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 0.5rem center;
-            background-size: 1em;
+        input[type="checkbox"]:checked { border-color: var(--primary); }
+        input[type="checkbox"]:checked::before { transform: scale(1); }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .count-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .heat-0 { background-color: #f1f5f9; color: #94a3b8; }
+        .heat-1 { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .heat-2 { background-color: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+        .heat-3 { background-color: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
+        .heat-4 { background-color: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+        .heat-max { background-color: #f97316; color: white; border-color: #ea580c; animation: pulse-heat 2s infinite; }
+
+        @keyframes pulse-heat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); }
+        }
+
+        .calendar-day {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .calendar-day:hover { background-color: #f1f5f9; }
+        .calendar-day.today { border: 2px solid var(--primary); color: var(--primary); }
+        .calendar-day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: #10b981;
+        }
+        .calendar-day.selected { background-color: var(--primary); color: white; }
+
+        .edit-btn { opacity: 0; transition: opacity 0.2s; }
+        .group:hover .edit-btn, .subject-header:hover .edit-btn, .main-title-group:hover .edit-btn { opacity: 1; }
+        
+        .alert-pulse { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red {
+            0%, 100% { color: #f87171; transform: scale(1); }
+            50% { color: #ef4444; transform: scale(1.2); }
         }
 
         .active-btn {
@@ -97,830 +135,541 @@
             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
         }
 
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4f46e5;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
+        .large-calendar-day {
+            min-height: 80px;
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: white;
+            transition: all 0.2s;
         }
+        .large-calendar-day:hover { background-color: #f8fafc; }
+        .large-calendar-day.not-current { background-color: #f1f5f9; color: #cbd5e1; }
+        .large-calendar-day.today { background-color: #eef2ff; border-color: var(--primary); }
 
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .streak-fire { animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .dark-theme ::-webkit-scrollbar-thumb { background: #475569; }
+        /* Timeline Styles */
+        .timeline-container {
+            position: relative;
+            padding-left: 32px;
+        }
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background: #e2e8f0;
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 20px;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -26px;
+            top: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid var(--primary);
+            z-index: 10;
+        }
+        .timeline-item.done .timeline-dot { border-color: #10b981; background: #10b981; }
+        .timeline-item.done .task-card { opacity: 0.5; }
+        .timeline-item.done .task-title { text-decoration: line-through; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <!-- HEADER -->
-        <header class="relative overflow-hidden bg-slate-900 rounded-[2.5rem] p-8 md:p-12 mb-8 shadow-2xl border-b-8 border-indigo-600">
-            <div class="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-8">
-                <div class="flex flex-col gap-4 text-center lg:text-left">
-                    <div class="flex items-center justify-center lg:justify-start gap-3">
-                        <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px] font-black uppercase tracking-widest">
-                            PC-AP Operacional 2026
-                        </div>
-                        <button onclick="toggleTheme()" class="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors" title="Alternar Tema">
-                            <span id="theme-icon">🌙</span>
-                        </button>
-                    </div>
-                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-none">
-                        Aprovação <span class="text-indigo-400">Elite</span>
-                    </h1>
+        <header class="mb-8 flex flex-col md:flex-row justify-between items-start gap-6">
+            <div class="flex-1">
+                <div class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest mb-3">
+                    Plataforma Operacional Elite
                 </div>
-                
-                <div class="flex flex-wrap justify-center gap-4">
-                    <div class="bg-white/5 p-4 md:p-5 rounded-3xl border border-white/10 text-center min-w-[100px] md:min-w-[110px] backdrop-blur-md">
-                        <span class="block text-2xl md:text-3xl font-bold text-white" id="header-hours">0h</span>
-                        <span class="text-[10px] uppercase font-bold text-slate-500 tracking-tighter">Estudo Total</span>
+                <div class="flex items-center gap-3 main-title-group">
+                    <h1 class="text-4xl font-extrabold text-slate-900 leading-tight" id="main-edital-title">PC-AP 2026</h1>
+                    <button onclick="window.editEditalName()" class="edit-btn text-slate-300 hover:text-indigo-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                </div>
+                <p class="text-slate-500 font-medium italic">Gestão Avançada de Estudos e Revisão Espaçada</p>
+            </div>
+            
+            <div class="flex flex-col items-center gap-3 w-full md:w-auto">
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 min-w-[240px] text-center w-full">
+                    <div class="text-4xl font-black text-indigo-600" id="global-progress-pct">0%</div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400 mt-1 tracking-widest">Conclusão Geral</div>
+                    <div class="w-full h-2 bg-slate-100 rounded-full mt-3 overflow-hidden">
+                        <div id="global-progress-bar" class="h-full bg-indigo-500 progress-bar-fill" style="width: 0%"></div>
                     </div>
-                    <div class="bg-white/5 p-4 md:p-5 rounded-3xl border border-white/10 text-center min-w-[100px] md:min-w-[110px] backdrop-blur-md">
-                        <span class="block text-2xl md:text-3xl font-bold text-emerald-400" id="header-perc">0%</span>
-                        <span class="text-[10px] uppercase font-bold text-slate-500 tracking-tighter">Edital</span>
-                    </div>
-                    <div class="bg-orange-500/20 p-4 md:p-5 rounded-3xl border border-orange-500/30 text-center min-w-[100px] md:min-w-[110px] backdrop-blur-md flex flex-col items-center">
-                        <span class="text-2xl md:text-3xl streak-fire">🔥</span>
-                        <span class="text-[10px] uppercase font-bold text-orange-400 tracking-tighter mt-1" id="header-streak">0 Dias</span>
-                    </div>
+                </div>
+                <div class="flex gap-2 w-full">
+                    <button onclick="window.addSubjectPrompt()" class="flex-1 bg-slate-900 text-white text-[10px] font-black uppercase py-3 rounded-xl shadow-lg hover:bg-slate-800 transition-all">+ Matéria</button>
+                    <button onclick="window.resetToDefault()" class="px-4 bg-rose-50 text-rose-600 text-[10px] font-black uppercase py-3 rounded-xl border border-rose-100 hover:bg-rose-100">Reiniciar</button>
                 </div>
             </div>
-            <div class="absolute -right-20 -top-20 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl"></div>
         </header>
 
-        <!-- MENU NAVEGAÇÃO -->
-        <nav class="flex overflow-x-auto gap-2 p-2 bg-white dark:bg-slate-800 rounded-2xl mb-8 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors no-scrollbar">
-            <button onclick="showTab('planner')" id="btn-planner" class="tab-btn active-btn flex-none py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">📅 Planner</button>
-            <button onclick="showTab('resumo')" id="btn-resumo" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">📝 Resumo</button>
-            <button onclick="showTab('simulado')" id="btn-simulado" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">🤖 Simulado IA</button>
-            <button onclick="showTab('materiais')" id="btn-materiais" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">📚 Materiais</button>
-            <button onclick="showTab('progresso')" id="btn-progresso" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">📈 Progresso</button>
-            <button onclick="showTab('edital')" id="btn-edital" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">📋 Edital</button>
-            <button onclick="showTab('questoes')" id="btn-questoes" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">🎯 Questões</button>
-            <button onclick="showTab('historico')" id="btn-historico" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">📖 Histórico</button>
-            <button onclick="showTab('guia')" id="btn-guia" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">📘 Guia</button>
+        <!-- NAVEGAÇÃO -->
+        <nav class="flex overflow-x-auto gap-2 p-2 bg-white rounded-2xl mb-8 shadow-sm no-scrollbar border border-slate-100">
+            <button onclick="window.showTab('planner')" id="btn-planner" class="tab-btn active-btn flex-none py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">📅 Planner</button>
+            <button onclick="window.showTab('agenda')" id="btn-agenda" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 py-3 px-6 rounded-xl font-bold text-xs uppercase transition-all">🗓️ Agenda</button>
+            <button onclick="window.showTab('questoes')" id="btn-questoes" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 py-3 px-6 rounded-xl font-bold text-xs uppercase transition-all">🎯 Questões</button>
+            <button onclick="window.showTab('evolucao')" id="btn-evolucao" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 py-3 px-6 rounded-xl font-bold text-xs uppercase transition-all">📈 Evolução</button>
         </nav>
 
         <!-- ABA: PLANNER -->
         <div id="planner" class="tab-content active">
-            <div class="bg-indigo-600/5 rounded-3xl p-6 mb-8 border border-indigo-100 dark:border-indigo-900 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div>
-                    <h3 class="text-indigo-600 dark:text-indigo-400 font-black text-lg">Quadro Semanal</h3>
-                    <p class="text-slate-500 text-sm">Visualize o planeamento das disciplinas da semana.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                <div class="bg-white p-6 rounded-[1.5rem] border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-xs font-black uppercase text-indigo-500 tracking-widest mb-4">🔔 Revisões Hoje</h3>
+                    <div id="revisoes-hoje" class="space-y-2 text-[11px] font-medium text-slate-600 overflow-y-auto max-h-[200px]">
+                        <p class="text-slate-400 italic text-center py-2 text-xs">Sem revisões pendentes.</p>
+                    </div>
                 </div>
-                <div class="flex gap-4" id="weekly-board-stats"></div>
+                <div class="bg-white p-6 rounded-[1.5rem] border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xs font-black uppercase text-emerald-500 tracking-widest">🗓️ Calendário Rápido</h3>
+                        <div id="calendar-month-label" class="text-[10px] font-black text-slate-400 uppercase">Mês Atual</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center mb-2"></div>
+                    <div id="calendar-details" class="mt-4 pt-3 border-t border-slate-50 hidden">
+                        <div id="selected-date-label" class="text-[9px] font-black text-indigo-500 uppercase mb-2"></div>
+                        <div id="selected-date-list" class="space-y-1 text-[10px] text-slate-500"></div>
+                    </div>
+                </div>
             </div>
-
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-black text-slate-800 dark:text-white">Seu Plano Diário</h2>
-                <button onclick="adicionarDiaPlanner()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-2xl text-sm shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
-                    <span>+ Novo Dia</span>
-                </button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="planner-grid"></div>
+            <div id="edital-container"></div>
         </div>
 
-        <!-- ABA: SIMULADO IA (NOVA) -->
-        <div id="simulado" class="tab-content">
-            <div class="max-w-4xl mx-auto">
-                <!-- Tela Inicial Simulado -->
-                <div id="ia-config" class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-xl">
-                    <div class="flex items-center gap-4 mb-8">
-                        <div class="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg">🤖</div>
-                        <div>
-                            <h2 class="text-2xl font-black dark:text-white">Desafio de Inteligência Artificial</h2>
-                            <p class="text-slate-500 text-sm">Gere questões inéditas baseadas no edital da PC-AP.</p>
+        <!-- ABA: AGENDA -->
+        <div id="agenda" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Coluna Ciclo Manual -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xs font-black uppercase text-indigo-600 tracking-widest flex items-center gap-2">
+                                🚀 Meu Ciclo Personalizado
+                            </h3>
+                            <button onclick="window.openTimelineModal()" class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg hover:scale-110 transition-all">+</button>
+                        </div>
+                        <div id="study-timeline" class="timeline-container space-y-2 max-h-[600px] overflow-y-auto pr-2">
+                            <!-- Gerado via JS -->
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Disciplina</label>
-                            <select id="ia-materia" onchange="atualizarTopicosIA()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold custom-select outline-none dark:text-white"></select>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Assunto Específico</label>
-                            <select id="ia-topico" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold custom-select outline-none dark:text-white"></select>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Dificuldade</label>
-                            <select id="ia-dificuldade" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold custom-select outline-none dark:text-white">
-                                <option value="Fácil">Fácil (Conceitos Básicos)</option>
-                                <option value="Médio" selected>Médio (Letra da Lei + Casos)</option>
-                                <option value="Difícil">Difícil (Jurisprudência + Doutrina)</option>
-                            </select>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Quantidade</label>
-                            <select id="ia-quantidade" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold custom-select outline-none dark:text-white">
-                                <option value="3">3 Questões</option>
-                                <option value="5" selected>5 Questões</option>
-                                <option value="10">10 Questões</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button onclick="gerarSimuladoIA()" id="btn-gerar-ia" class="w-full bg-indigo-600 text-white font-black py-5 rounded-[1.5rem] shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3">
-                        <span id="ia-btn-text">GERAR SIMULADO AGORA</span>
-                        <div id="ia-loader" class="loader hidden"></div>
-                    </button>
-                    <p class="text-[10px] text-center text-slate-400 mt-4 uppercase font-bold">As questões são geradas em tempo real por IA</p>
-                </div>
-
-                <!-- Área de Questões (Oculta Inicialmente) -->
-                <div id="ia-quiz-area" class="hidden space-y-6">
-                    <div class="bg-indigo-600 rounded-3xl p-6 text-white flex justify-between items-center shadow-lg">
-                        <div id="ia-quiz-status" class="font-black text-sm uppercase tracking-widest">Questão 1 de 5</div>
-                        <div id="ia-quiz-timer" class="font-mono text-xl font-bold bg-white/10 px-4 py-1 rounded-xl">00:00</div>
-                    </div>
-
-                    <div id="ia-question-container" class="bg-white dark:bg-slate-800 p-8 md:p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl">
-                        <!-- Questão Gerada Aqui -->
+                    <!-- Metas -->
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                        <h3 class="text-xs font-black uppercase text-slate-400 tracking-widest mb-4 flex justify-between items-center">
+                            📌 Metas Diárias
+                            <button onclick="window.addGoal('daily')" class="bg-indigo-50 text-indigo-600 p-1 rounded-lg hover:bg-indigo-100 text-sm">+</button>
+                        </h3>
+                        <div id="daily-goals-list" class="space-y-2"></div>
                     </div>
                 </div>
 
-                <!-- Resultado Simulado -->
-                <div id="ia-result-area" class="hidden">
-                    <div class="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl text-center">
-                        <div class="text-6xl mb-4" id="ia-result-emoji">🏆</div>
-                        <h2 class="text-3xl font-black dark:text-white mb-2">Simulado Concluído!</h2>
-                        <p class="text-slate-500 mb-8" id="ia-result-desc">Você teve um excelente desempenho.</p>
-                        
-                        <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-10">
-                            <div class="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-3xl border border-emerald-100 dark:border-emerald-800/50">
-                                <div class="text-3xl font-black text-emerald-600" id="ia-res-acertos">0</div>
-                                <div class="text-[10px] font-black uppercase text-emerald-400">Acertos</div>
-                            </div>
-                            <div class="bg-rose-50 dark:bg-rose-900/20 p-6 rounded-3xl border border-rose-100 dark:border-rose-800/50">
-                                <div class="text-3xl font-black text-rose-600" id="ia-res-erros">0</div>
-                                <div class="text-[10px] font-black uppercase text-rose-400">Erros</div>
-                            </div>
-                        </div>
-
-                        <button onclick="showTab('simulado'); resetIAConfig();" class="w-full bg-slate-900 text-white font-black py-5 rounded-[1.5rem] hover:bg-slate-800 transition-all uppercase tracking-widest text-sm">Novo Simulado</button>
+                <!-- Calendário Grande -->
+                <div class="lg:col-span-7 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-8">
+                        <button onclick="window.changeLargeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-xl transition-colors text-xs font-bold">ANTERIOR</button>
+                        <h2 id="large-calendar-title" class="text-xl font-black text-slate-800 uppercase tracking-tight">Mês</h2>
+                        <button onclick="window.changeLargeMonth(1)" class="p-2 hover:bg-slate-100 rounded-xl transition-colors text-xs font-bold">PRÓXIMO</button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-2xl overflow-hidden shadow-inner">
+                        <div class="bg-slate-50 p-3 text-center text-[9px] font-black text-slate-400 uppercase">Dom</div>
+                        <div class="bg-slate-50 p-3 text-center text-[9px] font-black text-slate-400 uppercase">Seg</div>
+                        <div class="bg-slate-50 p-3 text-center text-[9px] font-black text-slate-400 uppercase">Ter</div>
+                        <div class="bg-slate-50 p-3 text-center text-[9px] font-black text-slate-400 uppercase">Qua</div>
+                        <div class="bg-slate-50 p-3 text-center text-[9px] font-black text-slate-400 uppercase">Qui</div>
+                        <div class="bg-slate-50 p-3 text-center text-[9px] font-black text-slate-400 uppercase">Sex</div>
+                        <div class="bg-slate-50 p-3 text-center text-[9px] font-black text-slate-400 uppercase">Sáb</div>
+                        <div id="large-calendar-grid" class="contents"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- OUTRAS ABAS (RESUMO, MATERIAIS, PROGRESSO, EDITAL, QUESTÕES, HISTÓRICO, GUIA) MANTIDAS IGUAIS -->
-        <div id="resumo" class="tab-content">
-            <div class="max-w-6xl mx-auto">
-                <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+        <!-- MODAL PARA ADICIONAR AO CICLO -->
+        <div id="timeline-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+            <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl">
+                <h3 class="text-xl font-black text-slate-800 mb-6">Nova Tarefa</h3>
+                <div class="space-y-4">
                     <div>
-                        <h2 class="text-2xl font-black text-slate-800 dark:text-white">Resumo Master do Edital</h2>
-                        <p class="text-sm text-slate-500">Acompanhe todos os tópicos e sua performance em tempo real.</p>
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Disciplina</label>
+                        <select id="t-select-subject" onchange="window.updateTimelineTopics()" class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-xs"></select>
                     </div>
-                    <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                        <div class="relative w-full sm:w-64">
-                            <input type="text" id="resumo-search" oninput="filtrarResumo()" placeholder="Buscar tópico..." class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white">
-                            <span class="absolute right-3 top-3.5 opacity-30">🔍</span>
-                        </div>
-                        <select id="resumo-filter" onchange="filtrarResumo()" class="w-full sm:w-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none custom-select dark:text-white">
-                            <option value="todos">Todos Status</option>
-                            <option value="concluidos">Concluídos (100%)</option>
-                            <option value="em-estudo">Em Estudo</option>
-                            <option value="pendentes">Não Iniciados</option>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Tópico</label>
+                        <select id="t-select-topic" class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-xs"></select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Atividade</label>
+                        <select id="t-select-type" class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-xs">
+                            <option value="📖 TEORIA">📖 TEORIA</option>
+                            <option value="🎯 QUESTÕES">🎯 QUESTÕES</option>
+                            <option value="📝 RESUMO / REVISÃO">📝 RESUMO / REVISÃO</option>
                         </select>
                     </div>
                 </div>
-                <div id="resumo-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                <div id="resumo-empty" class="hidden text-center py-20 text-slate-400">
-                    <div class="text-5xl mb-4">🔎</div>
-                    <p class="font-bold">Nenhum tópico encontrado.</p>
+                <div class="flex gap-3 mt-8">
+                    <button onclick="window.closeTimelineModal()" class="flex-1 p-3 rounded-xl font-bold text-slate-400 hover:bg-slate-50 transition-all uppercase text-[10px]">Cancelar</button>
+                    <button onclick="window.saveTimelineTask()" class="flex-1 bg-indigo-600 text-white p-3 rounded-xl font-black shadow-lg hover:bg-indigo-700 transition-all uppercase text-[10px]">Adicionar</button>
                 </div>
             </div>
         </div>
 
-        <div id="materiais" class="tab-content">
-            <div class="max-w-6xl mx-auto">
-                <div class="text-center mb-10">
-                    <h2 class="text-3xl font-black text-slate-800 dark:text-white mb-2">Central de Materiais Elite</h2>
-                    <p class="text-slate-500">Videoaulas, Resumos e Mapas Mentais focados na PC-AP.</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    <div class="md:col-span-1 space-y-2 max-h-[600px] overflow-y-auto pr-2" id="materiais-subjects-list"></div>
-                    <div class="md:col-span-3 space-y-4" id="materiais-topics-content">
-                        <div class="bg-white dark:bg-slate-800 p-12 md:p-20 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 text-center flex flex-col items-center justify-center">
-                            <div class="text-6xl mb-4">📚</div>
-                            <h3 class="text-xl font-bold dark:text-white">Selecione uma disciplina</h3>
-                            <p class="text-slate-500 text-sm mt-2 max-w-xs">Escolha uma matéria ao lado para visualizar os recursos de estudo disponíveis por tópico.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="progresso" class="tab-content">
-            <div class="max-w-6xl mx-auto">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                    <div class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-center text-center">
-                        <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-2xl mb-4">🎯</div>
-                        <h4 class="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Meta Semanal</h4>
-                        <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold">15 Horas Líquidas</p>
-                        <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full mt-4 overflow-hidden">
-                            <div id="goal-week-bar" class="h-full bg-indigo-500 progress-bar-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-center text-center">
-                        <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-2xl mb-4">📊</div>
-                        <h4 class="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Constância</h4>
-                        <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold">Média Diária</p>
-                        <div class="text-2xl font-black text-emerald-600 mt-2" id="stat-avg-daily">0h</div>
-                    </div>
-                    <div class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-center text-center">
-                        <div class="w-14 h-14 bg-orange-50 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-2xl mb-4">⚡</div>
-                        <h4 class="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Eficiência</h4>
-                        <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold">Teoria vs Questões</p>
-                        <div class="text-2xl font-black text-orange-600 mt-2" id="stat-efficiency">0%</div>
-                    </div>
-                </div>
-                <div class="bg-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white mb-10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-10 border border-slate-800">
-                    <div class="text-center md:text-left">
-                        <h3 class="text-xs font-black uppercase text-indigo-400 mb-2 tracking-widest">Status Geral do Edital</h3>
-                        <div class="text-5xl md:text-7xl font-black"><span id="progresso-global-pct-aba">0</span>%</div>
-                    </div>
-                    <div class="w-full max-w-md">
-                        <div class="relative h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-700 shadow-inner">
-                            <div id="progresso-global-bar-aba" class="absolute h-full bg-gradient-to-r from-indigo-500 to-emerald-400 progress-bar-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 gap-8" id="progresso-materias-detalhado"></div>
-            </div>
-        </div>
-
-        <div id="edital" class="tab-content">
-            <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[600px]">
-                        <thead>
-                            <tr class="bg-slate-50 dark:bg-slate-900/50 border-b dark:border-slate-700 text-xs font-black uppercase text-slate-400">
-                                <th class="p-6">Tópico</th>
-                                <th class="p-6 text-center">Teoria</th>
-                                <th class="p-6 text-center">R24h</th>
-                                <th class="p-6 text-center">R7d</th>
-                                <th class="p-6 text-center">Quest.</th>
-                            </tr>
-                        </thead>
-                        <tbody id="edital-body" class="text-sm"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
+        <!-- ABA: QUESTÕES -->
         <div id="questoes" class="tab-content">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] shadow-xl border border-slate-200 dark:border-slate-700 h-fit lg:sticky lg:top-4">
-                    <h3 class="text-xl font-black mb-6 dark:text-white">Registar Bateria</h3>
+                <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl h-fit">
+                    <h3 class="text-xl font-black mb-6 text-slate-800">Registrar Bateria</h3>
                     <div class="space-y-4">
-                        <select id="q-materia" onchange="atualizarTopicosQuestao()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold custom-select outline-none dark:text-white"></select>
-                        <select id="q-topico" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl font-bold custom-select outline-none dark:text-white"></select>
+                        <select id="q-select-subject" onchange="window.updateQuestaoTopics()" class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-xs outline-none"></select>
+                        <select id="q-select-topic" class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-xs outline-none"></select>
                         <div class="grid grid-cols-2 gap-4">
-                            <input type="number" id="q-acertos" placeholder="Acertos" min="0" class="bg-slate-50 dark:bg-slate-900 border dark:border-slate-700 p-4 rounded-2xl font-bold outline-none text-emerald-600">
-                            <input type="number" id="q-erros" placeholder="Erros" min="0" class="bg-slate-50 dark:bg-slate-900 border dark:border-slate-700 p-4 rounded-2xl font-bold outline-none text-rose-600">
+                            <input type="number" id="q-input-correct" placeholder="Acertos" min="0" class="w-full p-3 rounded-xl border border-slate-200 bg-emerald-50 text-emerald-700 font-black text-center">
+                            <input type="number" id="q-input-wrong" placeholder="Erros" min="0" class="w-full p-3 rounded-xl border border-slate-200 bg-rose-50 text-rose-700 font-black text-center">
                         </div>
-                        <button onclick="salvarBateriaQuestao()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all">Salvar Resultado</button>
+                        <button onclick="window.saveQuestionStats()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all uppercase text-[10px] tracking-widest">Salvar</button>
                     </div>
                 </div>
                 <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white flex flex-col md:flex-row items-center justify-between border border-slate-800 gap-6">
-                        <div>
-                            <h3 class="text-2xl font-black mb-1">Precisão Global</h3>
-                            <div class="flex gap-4 mt-4 text-center">
-                                <div><div class="text-emerald-400 text-xl font-black" id="stat-a-total">0</div><div class="text-[9px] uppercase font-bold text-slate-500">Acertos</div></div>
-                                <div><div class="text-rose-400 text-xl font-black" id="stat-e-total">0</div><div class="text-[9px] uppercase font-bold text-slate-500">Erros</div></div>
-                            </div>
-                        </div>
-                        <div class="w-32 h-32 rounded-full progress-circle flex items-center justify-center border-4 border-slate-800 shadow-xl" id="q-global-circle" style="--progress: 0%">
-                            <div class="bg-slate-900 w-24 h-24 rounded-full flex items-center justify-center text-2xl font-black text-white" id="q-global-pct">0%</div>
-                        </div>
+                    <div class="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl flex justify-between items-center text-white">
+                        <div><h3 class="text-2xl font-black mb-1" id="stats-global-accuracy">0%</h3><p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest text-left">Precisão Global</p></div>
+                        <div class="text-right"><h3 class="text-2xl font-black mb-1" id="stats-total-correct">0</h3><p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Acertos</p></div>
                     </div>
-                    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm min-w-[400px]">
-                                <tbody id="q-mapeamento-body"></tbody>
-                            </table>
-                        </div>
+                    <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+                        <table class="w-full text-left text-xs"><tbody id="stats-table-body"></tbody></table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="historico" class="tab-content">
-            <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[700px]">
-                        <thead>
-                            <tr class="bg-slate-50 dark:bg-slate-900/50 border-b dark:border-slate-700 text-[10px] font-black uppercase text-slate-400">
-                                <th class="p-6">Data</th>
-                                <th class="p-6">Tipo</th>
-                                <th class="p-6">Assunto</th>
-                                <th class="p-6">Tempo</th>
-                                <th class="p-6 text-center">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historico-body" class="text-sm"></tbody>
-                    </table>
+        <!-- ABA: EVOLUÇÃO -->
+        <div id="evolucao" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                    <h3 class="text-xs font-black uppercase text-indigo-500 mb-6">Radar de Progresso</h3>
+                    <div class="relative h-[300px]"><canvas id="radarChart"></canvas></div>
                 </div>
+                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                    <h3 class="text-xs font-black uppercase text-emerald-500 mb-6">Precisão em Questões (%)</h3>
+                    <div class="relative h-[300px]"><canvas id="barChartQuestao"></canvas></div>
+                </div>
+            </div>
+            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                <h3 class="text-xs font-black uppercase text-indigo-500 mb-6">Linha de Evolução (%)</h3>
+                <div class="relative h-[300px] w-full"><canvas id="lineChartEvolucao"></canvas></div>
             </div>
         </div>
 
-        <div id="guia" class="tab-content">
-            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 py-10">
-                <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <div class="text-3xl mb-4">🤖</div>
-                    <h4 class="font-bold text-lg mb-2 dark:text-white">Simulado IA</h4>
-                    <p class="text-slate-500 text-sm">Use o poder da IA para criar questões que desafiam seu conhecimento nos tópicos mais difíceis.</p>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <div class="text-3xl mb-4">⏱️</div>
-                    <h4 class="font-bold text-lg mb-2 dark:text-white">Horas Líquidas</h4>
-                    <p class="text-slate-500 text-sm">Controle seu tempo de foco com o cronómetro integrado. Horas reais valem mais.</p>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <div class="text-3xl mb-4">🔥</div>
-                    <h4 class="font-bold text-lg mb-2 dark:text-white">Fogo da Constância</h4>
-                    <p class="text-slate-500 text-sm">Mantenha seu Streak ativo estudando todos os dias. Não deixe a chama apagar!</p>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <div class="text-3xl mb-4">📊</div>
-                    <h4 class="font-bold text-lg mb-2 dark:text-white">Estatísticas Reais</h4>
-                    <p class="text-slate-500 text-sm">Mapeie suas fraquezas nos tópicos detalhados. O sistema avisa onde você precisa de atenção.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE TEMPO -->
-    <div id="modal-tempo" class="fixed inset-0 z-[100] flex items-center justify-center hidden">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="fecharModal()"></div>
-        <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 relative z-10 w-full max-w-sm mx-4 border border-slate-200 dark:border-slate-700 shadow-2xl">
-            <h3 class="text-xl font-black mb-2 tracking-tight dark:text-white">⏱️ Registo de Tempo</h3>
-            <p id="modal-desc" class="text-xs font-bold text-slate-400 mb-6 uppercase tracking-widest leading-relaxed"></p>
-            <div class="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-800/50 flex gap-4 text-center mb-6">
-                <div class="flex-1">
-                    <input type="number" id="modal-h" placeholder="0" min="0" class="w-full text-2xl font-black text-center bg-transparent border-b-2 border-indigo-200 outline-none dark:text-white">
-                    <span class="text-[9px] font-black uppercase text-indigo-400 mt-2 block">Horas</span>
-                </div>
-                <div class="flex-1">
-                    <input type="number" id="modal-m" placeholder="0" min="0" max="59" class="w-full text-2xl font-black text-center bg-transparent border-b-2 border-indigo-200 outline-none dark:text-white">
-                    <span class="text-[9px] font-black uppercase text-indigo-400 mt-2 block">Minutos</span>
-                </div>
-            </div>
-            <div class="flex flex-col gap-3">
-                <button id="btn-cronometro" onclick="toggleCronometro()" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2">
-                    <span id="cron-icon">▶️</span> <span id="cron-text">Cronómetro</span>
-                </button>
-                <button onclick="confirmarSessao()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all text-sm tracking-widest uppercase">GUARDAR ESTUDO</button>
-            </div>
-        </div>
+        <footer class="mt-20 py-10 border-t border-slate-200 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+            PC-AP Elite Study Platform • Gestão Master
+        </footer>
     </div>
 
     <script>
-        // --- CONFIGURAÇÃO IA ---
-        const apiKey = ""; // Chave fornecida pelo ambiente
+        // --- FUNÇÕES UTILITÁRIAS GLOBAIS ---
+        window.safeSetText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
-        // --- DADOS E MAPEAMENTO DE CORES ---
-        const colorMap = {
-            blue: { bg: 'bg-blue-500', text: 'text-blue-500', lightBg: 'bg-blue-50', darkBg: 'dark:bg-blue-900/20' },
-            indigo: { bg: 'bg-indigo-500', text: 'text-indigo-500', lightBg: 'bg-indigo-50', darkBg: 'dark:bg-indigo-900/20' },
-            rose: { bg: 'bg-rose-500', text: 'text-rose-500', lightBg: 'bg-rose-50', darkBg: 'dark:bg-rose-900/20' },
-            orange: { bg: 'bg-orange-500', text: 'text-orange-500', lightBg: 'bg-orange-50', darkBg: 'dark:bg-orange-900/20' },
-            emerald: { bg: 'bg-emerald-500', text: 'text-emerald-500', lightBg: 'bg-emerald-50', darkBg: 'dark:bg-emerald-900/20' },
-            cyan: { bg: 'bg-cyan-500', text: 'text-cyan-500', lightBg: 'bg-cyan-50', darkBg: 'dark:bg-cyan-900/20' },
-            purple: { bg: 'bg-purple-500', text: 'text-purple-500', lightBg: 'bg-purple-50', darkBg: 'dark:bg-purple-900/20' },
-            amber: { bg: 'bg-amber-500', text: 'text-amber-500', lightBg: 'bg-amber-50', darkBg: 'dark:bg-amber-900/20' }
-        };
-
-        const subjectsData = [
-            { name: "Português", color: "blue", topics: ["Ortografia e Acentuação", "Pontuação", "Morfossintaxe", "Concordância/Regência", "Coesão Textual", "Vozes do Verbo", "Tipologia Textual"] },
-            { name: "D. Constitucional", color: "indigo", topics: ["Princípios Fundamentais", "Direitos e Garantias", "Organização do Estado", "Poderes da República", "Segurança Pública"] },
-            { name: "D. Penal", color: "rose", topics: ["Teoria do Crime", "Tipicidade e Ilicitude", "Culpabilidade", "Crimes contra a Pessoa", "Crimes Património", "Crimes contra Adm. Pública", "Leis Especiais (Drogas)"] },
-            { name: "Proc. Penal", color: "orange", topics: ["Inquérito Policial", "Acção Penal", "Provas e Sistemas", "Prisões Cautelares", "Recursos e Habeas Corpus"] },
-            { name: "D. Administrativo", color: "emerald", topics: ["Princípios da Adm.", "Organização Adm.", "Atos Administrativos", "Improbidade", "Licitações", "Responsabilidade do Estado"] },
-            { name: "Informática", color: "cyan", topics: ["Hardware e Software", "Windows 10", "Redes e Internet", "Segurança da Informação", "Pacote Office"] },
-            { name: "Regional AP", color: "purple", topics: ["Colonização do AP", "Criação do Território", "Economia Amapaense", "Geografia Física"] },
-            { name: "Redação", color: "amber", topics: ["Estrutura (Intro/Desen/Concl)", "Coesão e Coerência", "Prática: Tema Policial", "Técnicas de Argumentação", "Adequação Formal"] }
+        const initialData = [
+            { id: "sub_lp", name: "Língua Portuguesa", color: "blue", topics: [
+                { id: "lp_1", text: "Ortografia e acentuação" }, { id: "lp_2", text: "Emprego da crase" }, { id: "lp_3", text: "Compreensão de textos" }, { id: "lp_4", text: "Contexto histórico" }, { id: "lp_5", text: "Denotação e conotação" }, { id: "lp_6", text: "Discursos" }, { id: "lp_7", text: "Intertextualidade" }, { id: "lp_8", text: "Figuras de linguagem" }, { id: "lp_9", text: "Morfossintaxe" }, { id: "lp_10", text: "Formação de palavras" }, { id: "lp_11", text: "Sinonímia e antonímia" }, { id: "lp_12", text: "Pontuação" }, { id: "lp_13", text: "Pronomes" }, { id: "lp_14", text: "Concordância nominal e verbal" }, { id: "lp_15", text: "Flexão nominal e verbal" }, { id: "lp_16", text: "Vozes do verbo" }, { id: "lp_17", text: "Tempos e modos verbais" }, { id: "lp_18", text: "Redação e organização" }
+            ]},
+            { id: "sub_inf", name: "Informática", color: "cyan", topics: [
+                { id: "inf_1", text: "Funcionamento de computadores" }, { id: "inf_2", text: "Sistemas Windows" }, { id: "inf_3", text: "Hardware e software" }, { id: "inf_4", text: "Arquivos e programas" }, { id: "inf_5", text: "Redes e interconexão" }, { id: "inf_6", text: "Firefox e Chrome" }, { id: "inf_7", text: "Busca na Internet" }, { id: "inf_8", text: "Webmail e Outlook" }, { id: "inf_9", text: "Internet e Intranet" }, { id: "inf_10", text: "Segurança da informação" }, { id: "inf_11", text: "Vírus e malwares" }, { id: "inf_12", text: "Firewall e antispyware" }, { id: "inf_13", text: "MS Office e LibreOffice" }
+            ]},
+            { id: "sub_ap_hist", name: "História Amapá", color: "purple", topics: [
+                { id: "h_ap1", text: "Colonização do Amapá" }, { id: "h_ap2", text: "Disputas territoriais" }, { id: "h_ap3", text: "Economia séc XIX/XX" }, { id: "h_ap4", text: "Cabanagem no Amapá" }, { id: "h_ap5", text: "Território Federal" }, { id: "h_ap6", text: "Constituição 1988" }
+            ]},
+            { id: "sub_ap_geo", name: "Geografia Amapá", color: "purple", topics: [
+                { id: "g_ap1", text: "Espaço natural" }, { id: "g_ap2", text: "População" }, { id: "g_ap3", text: "Urbanização" }, { id: "g_ap4", text: "Espaço econômico" }
+            ]},
+            { id: "sub_esp", name: "Leis Específicas AP", color: "emerald", topics: [
+                { id: "esp_1", text: "Lei 0883/2015 (PC-AP)" }, { id: "esp_2", text: "Lei 066/1993 (Estatuto)" }
+            ]},
+            { id: "sub_const", name: "D. Constitucional", color: "indigo", topics: [
+                { id: "c_1", text: "Princípios fundamentais" }, { id: "c_2", text: "Direitos Individuais" }, { id: "c_3", text: "Direitos Sociais" }, { id: "c_4", text: "Nacionalidade" }, { id: "c_5", text: "Direitos Políticos" }, { id: "c_6", text: "Organização do Estado" }, { id: "c_7", text: "Administração Pública" }, { id: "c_8", text: "Poderes do Estado" }, { id: "c_9", text: "Segurança Pública" }
+            ]},
+            { id: "sub_adm", name: "D. Administrativo", color: "emerald", topics: [
+                { id: "a_1", text: "Conceito e princípios" }, { id: "a_2", text: "Poderes administrativos" }, { id: "a_3", text: "Organização do estado" }, { id: "a_4", text: "Ato administrativo" }, { id: "a_5", text: "Agente público" }, { id: "a_6", text: "Improbidade" }, { id: "a_7", text: "Licitação" }
+            ]},
+            { id: "sub_penal", name: "D. Penal", color: "rose", topics: [
+                { id: "p_1", text: "Aplicação da lei" }, { id: "p_2", text: "Teoria do Crime" }, { id: "p_3", text: "Pessoas e Penas" }, { id: "p_4", text: "Crimes contra pessoa" }, { id: "p_5", text: "Crimes contra patrimônio" }
+            ]},
+            { id: "sub_proc", name: "D. Processual Penal", color: "orange", topics: [
+                { id: "pr_1", text: "Inquérito policial" }, { id: "pr_2", text: "Ação penal" }, { id: "pr_3", text: "Prisão e cautelares" }, { id: "pr_4", text: "Provas" }, { id: "pr_5", text: "Sentença" }
+            ]},
+            { id: "sub_lex", name: "Legislação Extravagante", color: "amber", topics: [
+                { id: "ex_1", text: "Abuso de autoridade" }, { id: "ex_2", text: "Lei Maria da Penha" }, { id: "ex_3", text: "ECA" }, { id: "ex_4", text: "Lei de Drogas" }, { id: "ex_5", text: "Crimes Hediondos" }
+            ]},
+            { id: "sub_dh", name: "Direitos Humanos", color: "blue", topics: [
+                { id: "dh_1", text: "Teoria geral DH" }, { id: "dh_2", text: "DUDH" }, { id: "dh_3", text: "Convenção Americana" }
+            ]}
         ];
 
-        const cyclesInfo = {
-            "Bloco A": { style: "bg-gradient-to-br from-blue-500 to-indigo-600 text-white" },
-            "Bloco B": { style: "bg-gradient-to-br from-rose-500 to-pink-600 text-white" },
-            "Bloco C": { style: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white" },
-            "Bloco D": { style: "bg-gradient-to-br from-amber-500 to-orange-500 text-white" }
-        };
+        let subjects = JSON.parse(localStorage.getItem('pcap_master_v14')) || initialData;
+        let editalTitle = localStorage.getItem('pcap_title_v14') || "PC-AP ELITE";
+        let questionStats = JSON.parse(localStorage.getItem('pcap_stats_v14')) || {};
+        let dailyHistory = JSON.parse(localStorage.getItem('pcap_history_v14')) || [];
+        let goals = JSON.parse(localStorage.getItem('pcap_goals_v14')) || { daily: [], weekly: [] };
+        let manualTimeline = JSON.parse(localStorage.getItem('pcap_manual_timeline_v14')) || [];
+        
+        let currentLargeDate = new Date();
+        let charts = {};
 
-        // --- ESTADO ---
-        let plannerDays = JSON.parse(localStorage.getItem('pcap_v21_planner')) || [];
-        let qData = JSON.parse(localStorage.getItem('pcap_v21_questoes')) || { a: 0, e: 0, det: {} };
-        let cronInterval = null;
-        let cronSeconds = 0;
-
-        // --- ESTADO IA ---
-        let currentIAQuestions = [];
-        let currentIAIndex = 0;
-        let iaAcertos = 0;
-        let iaErros = 0;
-        let iaTimerInterval = null;
-        let iaStartTime = 0;
-
-        // --- UTILITÁRIOS ---
-        function formatarTempo(min) {
-            if (!min || min <= 0) return '0m';
-            const h = Math.floor(min / 60);
-            const m = min % 60;
-            return h > 0 ? `${h}h ${m}m` : `${m}m`;
-        }
-        function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
-
-        // --- TEMA E NAVEGAÇÃO ---
-        function toggleTheme() {
-            document.body.classList.toggle('dark-theme');
-            const isDark = document.body.classList.contains('dark-theme');
-            localStorage.setItem('pcap_dark_mode', isDark);
-            document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
-        }
-        function initTheme() {
-            if (localStorage.getItem('pcap_dark_mode') === 'true') {
-                document.body.classList.add('dark-theme');
-                document.getElementById('theme-icon').innerText = '☀️';
-            }
-        }
-        function showTab(tabId) {
+        // --- EXPORTAÇÃO DE FUNÇÕES AO WINDOW ---
+        window.showTab = (tabId) => {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-btn', 'text-white'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('text-slate-500'));
             const target = document.getElementById(tabId);
             if (target) target.classList.add('active');
             const btn = document.getElementById('btn-' + tabId);
-            if (btn) { btn.classList.add('active-btn'); btn.classList.remove('text-slate-500'); }
-            if (tabId === 'progresso') atualizarProgressoGlobal();
-            if (tabId === 'planner') renderPlannerLivre();
-            if (tabId === 'resumo') renderResumo();
-            if (tabId === 'materiais') renderMateriaisSubjects();
-            if (tabId === 'simulado') initSimuladoUI();
-        }
+            if (btn) btn.classList.add('active-btn');
+            
+            if(tabId === 'agenda') renderAgendaTab();
+            if(tabId === 'questoes') renderQuestaoTab();
+            if(tabId === 'planner') render();
+            if(tabId === 'evolucao') renderEvolutionTab();
+        };
 
-        // --- LÓGICA IA ---
-        function initSimuladoUI() {
-            const select = document.getElementById('ia-materia');
-            if (select && select.innerHTML === "") {
-                select.innerHTML = subjectsData.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-                atualizarTopicosIA();
+        window.getStatus = (id, col) => localStorage.getItem(`status_${id}_c${col}`) ? 'checked' : '';
+        window.getStatusDateLabel = (id) => { const d = localStorage.getItem(`date_study_${id}`); return d ? `<span class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Estudado: ${new Date(d).toLocaleDateString('pt-PT')}</span>` : ''; };
+        window.checkReviewAlert = (id) => { const ds = localStorage.getItem(`date_study_${id}`); if(!ds) return false; const diff = Math.floor((new Date()-new Date(ds))/(1000*60*60*24)); return (!localStorage.getItem(`status_${id}_c2`)&&diff>=1) || (!localStorage.getItem(`status_${id}_c3`)&&diff>=7); };
+
+        window.toggleStatus = (topId, col, checked) => {
+            const key = `status_${topId}_c${col}`;
+            if (checked) {
+                localStorage.setItem(key, 'true');
+                if (col === 1) localStorage.setItem(`date_study_${topId}`, new Date().toISOString());
+            } else {
+                localStorage.removeItem(key);
+                if (col === 1) localStorage.removeItem(`date_study_${topId}`);
             }
-        }
+            saveAndRender();
+        };
 
-        function atualizarTopicosIA() {
-            const materia = document.getElementById('ia-materia').value;
-            const sub = subjectsData.find(s => s.name === materia);
-            const select = document.getElementById('ia-topico');
-            if (select && sub) {
-                select.innerHTML = sub.topics.map(t => `<option value="${t}">${t}</option>`).join('');
-            }
-        }
+        window.incrementStudy = (id) => { localStorage.setItem(`round_count_${id}`, (parseInt(localStorage.getItem(`round_count_${id}`) || '0') + 1)); render(); };
+        window.resetStudyCount = (id) => { if(confirm("Zerar?")) { localStorage.setItem(`round_count_${id}`, 0); render(); } };
+        window.editEditalName = () => { const n = prompt("Concurso:", editalTitle); if(n) { editalTitle = n.toUpperCase(); localStorage.setItem('pcap_title_v14', editalTitle); render(); } };
+        window.editSubjectName = (id) => { const s = subjects.find(s=>s.id===id); const n = prompt("Matéria:", s.name); if(n) { s.name = n; saveAndRender(); } };
+        window.editTopicName = (id) => { const t = findTopic(id); const n = prompt("Tópico:", t.text); if(n) { t.text = n; saveAndRender(); } };
+        window.handleDriveLink = (id) => { const t = findTopic(id); const l = prompt("Link do Drive:", t.drive || ""); if(l!==null) { t.drive=l.trim(); saveAndRender(); } if(t.drive && t.drive.startsWith('http')) window.open(t.drive, '_blank'); };
+        window.addSubjectPrompt = () => { const n = prompt("Nome Matéria:"); if(n) { subjects.push({id:'s_'+Date.now(), name:n, color:'blue', topics:[]}); saveAndRender(); } };
+        window.addTopicPrompt = (id) => { const n = prompt("Nome Tópico:"); if(n) { subjects.find(s => s.id === id).topics.push({id:'t_'+Date.now(), text:n, drive:''}); saveAndRender(); } };
+        window.removeSubject = (id) => { if(confirm("Apagar matéria?")) { subjects = subjects.filter(s => s.id !== id); saveAndRender(); } };
+        window.removeTopic = (sid, tid) => { if(confirm("Apagar tópico?")) { const s = subjects.find(s => s.id === sid); s.topics = s.topics.filter(t => t.id !== tid); saveAndRender(); } };
+        window.resetToDefault = () => { if(confirm("Resetar edital?")) { subjects = initialData; saveAndRender(); } };
 
-        async function gerarSimuladoIA() {
-            const materia = document.getElementById('ia-materia').value;
-            const topico = document.getElementById('ia-topico').value;
-            const diff = document.getElementById('ia-dificuldade').value;
-            const qtd = parseInt(document.getElementById('ia-quantidade').value);
+        // --- AGENDA & CICLO MANUAL ---
+        window.openTimelineModal = () => {
+            const modal = document.getElementById('timeline-modal');
+            const subSel = document.getElementById('t-select-subject');
+            subSel.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            window.updateTimelineTopics();
+            modal.style.display = 'flex';
+        };
 
-            const btnText = document.getElementById('ia-btn-text');
-            const loader = document.getElementById('ia-loader');
-            btnText.innerText = "IA ESTÁ A PENSAR...";
-            loader.classList.remove('hidden');
-            document.getElementById('btn-gerar-ia').disabled = true;
+        window.closeTimelineModal = () => { document.getElementById('timeline-modal').style.display = 'none'; };
 
-            const prompt = `Gere exatamente ${qtd} questões de múltipla escolha para o concurso da PC-AP (Polícia Civil do Amapá). 
-            Matéria: ${materia}. Assunto específico: ${topico}. Dificuldade: ${diff}. 
-            As questões devem ser inéditas, com 4 opções (A, B, C, D) e indicar a resposta correta. 
-            Responda APENAS em formato JSON seguindo este esquema: 
-            [{"pergunta": "string", "opcoes": {"A": "string", "B": "string", "C": "string", "D": "string"}, "correta": "A/B/C/D"}]`;
+        window.updateTimelineTopics = () => {
+            const sub = subjects.find(s => s.id === document.getElementById('t-select-subject').value);
+            if(sub) document.getElementById('t-select-topic').innerHTML = sub.topics.map(t => `<option value="${t.text}">${t.text}</option>`).join('');
+        };
 
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    })
+        window.saveTimelineTask = () => {
+            const sub = subjects.find(s => s.id === document.getElementById('t-select-subject').value);
+            const topic = document.getElementById('t-select-topic').value;
+            const type = document.getElementById('t-select-type').value;
+            manualTimeline.push({ id: Date.now(), subject: sub.name, topic: topic, type: type, done: false, doneDate: null });
+            localStorage.setItem('pcap_manual_timeline_v14', JSON.stringify(manualTimeline));
+            window.closeTimelineModal(); renderAgendaTab();
+        };
+
+        window.toggleTimelineItem = (id) => {
+            const item = manualTimeline.find(i => i.id === id);
+            if(item) { item.done = !item.done; item.doneDate = item.done ? new Date().toLocaleString('pt-PT') : null; }
+            localStorage.setItem('pcap_manual_timeline_v14', JSON.stringify(manualTimeline)); renderAgendaTab();
+        };
+
+        window.removeTimelineItem = (id) => {
+            manualTimeline = manualTimeline.filter(i => i.id !== id);
+            localStorage.setItem('pcap_manual_timeline_v14', JSON.stringify(manualTimeline)); renderAgendaTab();
+        };
+
+        window.addGoal = (type) => { const t = prompt("Descrição:"); if(t) { goals[type].push({id: Date.now(), text: t, done: false}); saveGoals(); } };
+        window.toggleGoal = (type, id) => { const goal = goals[type].find(g => g.id === id); if(goal) goal.done = !goal.done; saveGoals(); };
+        window.removeGoal = (type, id) => { goals[type] = goals[type].filter(g => g.id !== id); saveGoals(); };
+        window.changeLargeMonth = (dir) => { currentLargeDate.setMonth(currentLargeDate.getMonth() + dir); renderLargeCalendar(); };
+        
+        window.updateSubjectProgress = (id) => {
+            const s = subjects.find(s=>s.id===id); if(!s || !s.topics.length) return;
+            let c=0; s.topics.forEach(t=>{for(let col=1;col<=4;col++)if(localStorage.getItem(`status_${t.id}_c${col}`))c++;});
+            const p = Math.round((c/(s.topics.length*4))*100);
+            const elP = document.getElementById(`pct-${id}`), elB = document.getElementById(`bar-${id}`);
+            if(elP) elP.innerText = p+'%'; if(elB) elB.style.width = p+'%';
+        };
+
+        window.updateGlobalProgress = () => {
+            let tp=0, tc=0; subjects.forEach(s=>{tp+=s.topics.length*4; s.topics.forEach(t=>{for(let c=1;c<=4;c++)if(localStorage.getItem(`status_${t.id}_c${c}`))tc++;});});
+            const p = tp===0?0:Math.round((tc/tp)*100);
+            window.safeSetText('global-progress-pct', p+'%');
+            const bar = document.getElementById('global-progress-bar'); if(bar) bar.style.width = p+'%';
+        };
+
+        function saveGoals() { localStorage.setItem('pcap_goals_v14', JSON.stringify(goals)); renderAgendaTab(); }
+
+        function renderAgendaTab() {
+            const mList = document.getElementById('daily-goals-list');
+            if(mList) mList.innerHTML = goals.daily.map(g => `<div class="flex items-center justify-between group"><label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" onchange="window.toggleGoal('daily', ${g.id})" ${g.done ? 'checked' : ''}><span class="${g.done ? 'line-through opacity-30' : ''} font-bold text-xs">${g.text}</span></label><button onclick="window.removeGoal('daily', ${g.id})" class="opacity-0 group-hover:opacity-100 text-rose-300">✕</button></div>`).join('');
+            const timeline = document.getElementById('study-timeline');
+            if(!timeline) return; timeline.innerHTML = '';
+            if(manualTimeline.length === 0) timeline.innerHTML = '<p class="text-slate-300 text-center py-10 italic text-xs">Crie o seu ciclo manual no botão + acima.</p>';
+            else {
+                manualTimeline.forEach(item => {
+                    timeline.innerHTML += `<div class="timeline-item ${item.done ? 'done' : ''}"><div class="timeline-dot"></div><div class="task-card bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative group"><button onclick="window.removeTimelineItem(${item.id})" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-rose-300 hover:text-rose-500 transition-opacity">✕</button><div class="flex items-center justify-between mb-1"><span class="text-[7px] font-black uppercase text-indigo-500">${item.subject}</span><input type="checkbox" onchange="window.toggleTimelineItem(${item.id})" ${item.done ? 'checked' : ''} class="w-3 h-3"></div><p class="task-title text-[10px] font-bold text-slate-700 leading-tight">${item.topic}</p><div class="flex items-center justify-between mt-3"><span class="text-[8px] font-black uppercase text-slate-400 tracking-widest">${item.type}</span>${item.doneDate ? `<span class="text-[7px] font-bold text-emerald-500 uppercase">${item.doneDate}</span>` : ''}</div></div></div>`;
                 });
-
-                const data = await response.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                currentIAQuestions = JSON.parse(text);
-                
-                iniciarQuizIA();
-            } catch (error) {
-                console.error(error);
-                alert("Erro ao conectar com a IA. Verifique sua conexão ou tente novamente.");
-            } finally {
-                btnText.innerText = "GERAR SIMULADO AGORA";
-                loader.classList.add('hidden');
-                document.getElementById('btn-gerar-ia').disabled = false;
             }
+            renderLargeCalendar();
         }
 
-        function iniciarQuizIA() {
-            document.getElementById('ia-config').classList.add('hidden');
-            document.getElementById('ia-quiz-area').classList.remove('hidden');
-            currentIAIndex = 0;
-            iaAcertos = 0;
-            iaErros = 0;
-            renderQuestionIA();
-            startIATimer();
-        }
-
-        function startIATimer() {
-            iaStartTime = Date.now();
-            if(iaTimerInterval) clearInterval(iaTimerInterval);
-            iaTimerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - iaStartTime) / 1000);
-                const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
-                const s = (elapsed % 60).toString().padStart(2, '0');
-                document.getElementById('ia-quiz-timer').innerText = `${m}:${s}`;
-            }, 1000);
-        }
-
-        function renderQuestionIA() {
-            const q = currentIAQuestions[currentIAIndex];
-            const container = document.getElementById('ia-question-container');
-            document.getElementById('ia-quiz-status').innerText = `Questão ${currentIAIndex + 1} de ${currentIAQuestions.length}`;
-
-            container.innerHTML = `
-                <p class="text-xl font-bold dark:text-white mb-8 leading-relaxed">${q.pergunta}</p>
-                <div class="space-y-3">
-                    ${Object.entries(q.opcoes).map(([key, val]) => `
-                        <button onclick="checkIAAnswer('${key}')" class="w-full text-left p-5 rounded-2xl border-2 border-slate-100 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all flex items-center gap-4 group">
-                            <span class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-black group-hover:bg-indigo-600 group-hover:text-white transition-colors dark:text-white">${key}</span>
-                            <span class="flex-1 font-medium text-slate-700 dark:text-slate-300">${val}</span>
-                        </button>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function checkIAAnswer(choice) {
-            const q = currentIAQuestions[currentIAIndex];
-            const isCorrect = choice === q.correta;
-
-            if (isCorrect) iaAcertos++;
-            else iaErros++;
-
-            // Gravar estatística global
-            const materia = document.getElementById('ia-materia').value;
-            const topico = document.getElementById('ia-topico').value;
-            gravarEstatisticaIA(materia, topico, isCorrect);
-
-            if (currentIAIndex < currentIAQuestions.length - 1) {
-                currentIAIndex++;
-                renderQuestionIA();
-            } else {
-                finalizarQuizIA();
-            }
-        }
-
-        function gravarEstatisticaIA(mat, top, isCorrect) {
-            if(!qData.det[mat]) qData.det[mat] = {};
-            if(!qData.det[mat][top]) qData.det[mat][top] = { a: 0, e: 0 };
-            
-            if (isCorrect) { qData.a++; qData.det[mat][top].a++; }
-            else { qData.e++; qData.det[mat][top].e++; }
-            
-            localStorage.setItem('pcap_v21_questoes', JSON.stringify(qData));
-            atualizarUIQuestoes();
-        }
-
-        function finalizarQuizIA() {
-            clearInterval(iaTimerInterval);
-            document.getElementById('ia-quiz-area').classList.add('hidden');
-            document.getElementById('ia-result-area').classList.remove('hidden');
-
-            document.getElementById('ia-res-acertos').innerText = iaAcertos;
-            document.getElementById('ia-res-erros').innerText = iaErros;
-
-            const perc = Math.round((iaAcertos / (iaAcertos + iaErros)) * 100);
-            const desc = document.getElementById('ia-result-desc');
-            const emoji = document.getElementById('ia-result-emoji');
-
-            if(perc >= 80) { desc.innerText = "Desempenho de Elite! Você está quase lá."; emoji.innerText = "🏆"; }
-            else if(perc >= 60) { desc.innerText = "Bom trabalho. Continue focado nos erros."; emoji.innerText = "📈"; }
-            else { desc.innerText = "Precisa reforçar a base deste tópico."; emoji.innerText = "💡"; }
-        }
-
-        function resetIAConfig() {
-            document.getElementById('ia-result-area').classList.add('hidden');
-            document.getElementById('ia-config').classList.remove('hidden');
-        }
-
-        // --- OUTRAS FUNÇÕES DO SISTEMA (CONSERVADAS) ---
-        function renderPlannerLivre() {
-            const grid = document.getElementById('planner-grid');
-            if (!grid) return; grid.innerHTML = '';
-            let tMat = 0, dMat = 0;
-            plannerDays.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(day => {
-                const cycle = cyclesInfo[day.cycle] || cyclesInfo["Bloco A"];
-                let slotsHtml = day.slots.map((s, idx) => {
-                    tMat++; if (s.teoria || s.revisao || s.questoes) dMat++;
-                    return `<div class="bg-white/95 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 mb-3 shadow-sm">
-                        <select onchange="updatePlannerSlot('${day.id}', ${idx}, 'subject', this.value)" class="w-full text-xs font-bold mb-2 bg-transparent border-b dark:border-slate-700 outline-none py-1 dark:text-white">
-                            <option value="">Matéria...</option>
-                            ${subjectsData.map(sub => `<option value="${sub.name}" ${s.subject === sub.name ? 'selected' : ''}>${sub.name}</option>`).join('')}
-                        </select>
-                        <select onchange="updatePlannerSlot('${day.id}', ${idx}, 'topic', this.value)" class="w-full text-[10px] font-medium mb-4 bg-transparent border-0 outline-none text-slate-500 py-1">
-                            <option value="">Tópico...</option>
-                            ${(subjectsData.find(sub => sub.name === s.subject)?.topics || []).map(t => `<option value="${t}" ${s.topic === t ? 'selected' : ''}>${t}</option>`).join('')}
-                        </select>
-                        <div class="flex justify-between px-1">
-                            ${['teoria', 'revisao', 'questoes'].map(type => `<label class="flex flex-col items-center gap-1 cursor-pointer group">
-                                <input type="checkbox" onchange="togglePlannerCheck('${day.id}', ${idx}, '${type}', this.checked)" ${s[type] ? 'checked' : ''}>
-                                <span class="text-[8px] font-black uppercase ${s[type] ? (type === 'revisao' ? 'text-purple-600' : (type === 'questoes' ? 'text-emerald-600' : 'text-indigo-600')) : 'text-slate-400'}">${type.substring(0, 3)}</span>
-                            </label>`).join('')}
-                        </div>
-                    </div>`}).join('');
-                grid.innerHTML += `<div class="day-card p-6 rounded-[2.5rem] shadow-xl ${cycle.style} flex flex-col gap-2">
-                    <div class="flex justify-between items-center mb-2">
-                        <input type="date" value="${day.date}" onchange="updatePlannerDate('${day.id}', this.value)" class="bg-white/20 text-white rounded-lg px-2 py-1 text-[10px] font-bold outline-none">
-                        <button onclick="removerDiaPlanner('${day.id}')" class="text-white/40 hover:text-white transition-colors p-1">✕</button>
-                    </div>
-                    <select onchange="updatePlannerCycle('${day.id}', this.value)" class="bg-transparent text-white font-black text-xl border-0 p-0 mb-4 outline-none cursor-pointer">
-                        ${Object.keys(cyclesInfo).map(c => `<option value="${c}" ${day.cycle === c ? 'selected' : ''} class="text-slate-800 font-bold">${c}</option>`).join('')}
-                    </select>
-                    ${slotsHtml}
-                </div>`;
-            });
-            const board = document.getElementById('weekly-board-stats');
-            if (board) board.innerHTML = `<div class="flex flex-col items-center"><span class="text-[9px] font-bold text-slate-400 uppercase">Total</span><span class="text-xl font-black text-slate-800 dark:text-white">${tMat}</span></div><div class="flex flex-col items-center"><span class="text-[9px] font-bold text-slate-400 uppercase">OK</span><span class="text-xl font-black text-emerald-500">${dMat}</span></div><div class="flex flex-col items-center"><span class="text-[9px] font-bold text-slate-400 uppercase">Pendente</span><span class="text-xl font-black text-indigo-500">${tMat - dMat}</span></div>`;
-        }
-
-        window.adicionarDiaPlanner = function() {
-            const date = new Date().toISOString().split('T')[0];
-            plannerDays.push({ id: 'd'+Date.now(), date, cycle: "Bloco A", slots: [
-                { subject: '', topic: '', teoria: false, t_time: 0, revisao: false, r_time: 0, questoes: false, q_time: 0 },
-                { subject: '', topic: '', teoria: false, t_time: 0, revisao: false, r_time: 0, questoes: false, q_time: 0 }
-            ]});
-            savePlannerAndReload();
-        }
-        window.updatePlannerSlot = (id, idx, field, val) => { const d = plannerDays.find(d => d.id === id); if(d) { d.slots[idx][field] = val; if(field==='subject') d.slots[idx].topic = ''; savePlannerAndReload(); } }
-        window.updatePlannerDate = (id, val) => { const d = plannerDays.find(d => d.id === id); if(d) d.date = val; savePlannerAndReload(); }
-        window.updatePlannerCycle = (id, val) => { const d = plannerDays.find(d => d.id === id); if(d) d.cycle = val; savePlannerAndReload(); }
-        window.removerDiaPlanner = (id) => { if(confirm("Apagar este dia do planeamento?")) { plannerDays = plannerDays.filter(d => d.id !== id); savePlannerAndReload(); } }
-
-        let modalRef = null;
-        window.togglePlannerCheck = (id, idx, type, checked) => {
-            const day = plannerDays.find(d => d.id === id);
-            if (!day) return; const slot = day.slots[idx];
-            if(checked) {
-                if(!slot.subject || !slot.topic) { renderPlannerLivre(); return alert("Selecione a matéria e o tópico primeiro!"); }
-                modalRef = { id, idx, type };
-                document.getElementById('modal-desc').innerText = `${slot.subject} > ${slot.topic} [${type.toUpperCase()}]`;
-                document.getElementById('modal-tempo').classList.remove('hidden');
-                document.getElementById('modal-h').value = ''; document.getElementById('modal-m').value = ''; cronSeconds = 0;
-            } else { slot[type] = false; slot[type.charAt(0)+'_time'] = 0; savePlannerAndReload(); }
-        }
-
-        window.toggleCronometro = function() {
-            const btnText = document.getElementById('cron-text'); const btnIcon = document.getElementById('cron-icon');
-            if (cronInterval) { clearInterval(cronInterval); cronInterval = null; btnText.innerText = "Retomar"; btnIcon.innerText = "▶️";
-            } else {
-                cronInterval = setInterval(() => { cronSeconds++;
-                    const h = Math.floor(cronSeconds / 3600); const m = Math.floor((cronSeconds % 3600) / 60);
-                    document.getElementById('modal-h').value = h > 0 ? h : '';
-                    document.getElementById('modal-m').value = m > 0 ? m : '';
-                    btnText.innerText = `${h}h ${m}m ${cronSeconds % 60}s`;
-                }, 1000); btnIcon.innerText = "⏸️";
-            }
-        }
-        window.fecharModal = () => { document.getElementById('modal-tempo').classList.add('hidden'); modalRef = null; if(cronInterval) { clearInterval(cronInterval); cronInterval = null; } document.getElementById('cron-text').innerText = "Cronómetro"; document.getElementById('cron-icon').innerText = "▶️"; renderPlannerLivre(); }
-        window.confirmarSessao = () => { if (!modalRef) return; const h = parseInt(document.getElementById('modal-h').value) || 0; const m = parseInt(document.getElementById('modal-m').value) || 0; const d = plannerDays.find(d => d.id === modalRef.id); if (d) { d.slots[modalRef.idx][modalRef.type] = true; d.slots[modalRef.idx][modalRef.type.charAt(0)+'_time'] = (h * 60) + m; } fecharModal(); savePlannerAndReload(); }
-        function savePlannerAndReload() { localStorage.setItem('pcap_v21_planner', JSON.stringify(plannerDays)); renderPlannerLivre(); atualizarHistorico(); atualizarProgressoGlobal(); }
-
-        function initQuestoes() {
-            const select = document.getElementById('q-materia');
-            if (select) select.innerHTML = `<option value="">Matéria...</option>` + subjectsData.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-            atualizarUIQuestoes();
-        }
-        window.atualizarTopicosQuestao = () => {
-            const sub = subjectsData.find(s => s.name === document.getElementById('q-materia').value);
-            const selectTopico = document.getElementById('q-topico');
-            if (selectTopico) selectTopico.innerHTML = `<option value="">Tópico...</option>` + (sub ? sub.topics.map(t => `<option value="${t}">${t}</option>`).join('') : '');
-        }
-        window.salvarBateriaQuestao = () => {
-            const mat = document.getElementById('q-materia').value, top = document.getElementById('q-topico').value;
-            const a = parseInt(document.getElementById('q-acertos').value) || 0, e = parseInt(document.getElementById('q-erros').value) || 0;
-            if(!mat || !top) return alert("Selecione a matéria e o tópico!");
-            if(a === 0 && e === 0) return alert("Insira o número de acertos ou erros.");
-            qData.a += a; qData.e += e;
-            if(!qData.det[mat]) qData.det[mat] = {};
-            if(!qData.det[mat][top]) qData.det[mat][top] = { a: 0, e: 0 };
-            qData.det[mat][top].a += a; qData.det[mat][top].e += e;
-            localStorage.setItem('pcap_v21_questoes', JSON.stringify(qData));
-            document.getElementById('q-acertos').value = ''; document.getElementById('q-erros').value = '';
-            atualizarUIQuestoes(); atualizarProgressoGlobal();
-        }
-        function atualizarUIQuestoes() {
-            const total = qData.a + qData.e; const perc = total === 0 ? 0 : Math.round((qData.a / total) * 100);
-            safeSetText('stat-a-total', qData.a); safeSetText('stat-e-total', qData.e); safeSetText('q-global-pct', perc + '%');
-            const circle = document.getElementById('q-global-circle'); if (circle) circle.style.setProperty('--progress', (perc * 3.6) + 'deg');
-            const tbody = document.getElementById('q-mapeamento-body'); if (!tbody) return; tbody.innerHTML = '';
-            for(const mat in qData.det) {
-                const sub = subjectsData.find(s => s.name === mat); const colors = colorMap[sub?.color] || colorMap.indigo;
-                for(const top in qData.det[mat]) {
-                    const d = qData.det[mat][top], t = d.a + d.e; if (t === 0) continue; const p = Math.round((d.a / t) * 100);
-                    let col = p >= 80 ? 'text-emerald-500' : (p >= 60 ? 'text-amber-500' : 'text-rose-500');
-                    tbody.innerHTML += `<tr class="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50"><td class="p-4"><div class="text-[9px] font-black ${colors.text} uppercase">${mat}</div><div class="font-bold dark:text-white">${top}</div></td><td class="p-4 text-center dark:text-slate-400"><span class="text-[10px] text-slate-400 block uppercase font-bold">Total</span><b class="text-base">${t}</b></td><td class="p-4 text-right"><span class="text-[10px] text-slate-400 block uppercase font-bold">Precisão</span><span class="font-black text-lg ${col}">${p}%</span></td></tr>`;
+        function renderLargeCalendar() {
+            const grid = document.getElementById('large-calendar-grid'); if(!grid) return; grid.innerHTML = '';
+            const year = currentLargeDate.getFullYear(), month = currentLargeDate.getMonth();
+            const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+            window.safeSetText('large-calendar-title', `${monthNames[month]} ${year}`);
+            const firstDay = new Date(year, month, 1).getDay(), daysInMonth = new Date(year, month + 1, 0).getDate();
+            const events = {};
+            subjects.forEach(s => s.topics.forEach(t => {
+                const sd = localStorage.getItem(`date_study_${t.id}`);
+                if(sd) {
+                    const b = new Date(sd);
+                    [{ d: new Date(new Date(b).setDate(b.getDate()+1)), c: 2 }, { d: new Date(new Date(b).setDate(b.getDate()+7)), c: 3 }].forEach(r => {
+                        if(!localStorage.getItem(`status_${t.id}_c${r.c}`)) {
+                            const k = r.d.toISOString().split('T')[0]; if(!events[k]) events[k] = [];
+                            events[k].push(s.name.substring(0,3));
+                        }
+                    });
                 }
+            }));
+            for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="large-calendar-day not-current"></div>`;
+            const todayStr = new Date().toISOString().split('T')[0];
+            for(let d=1; d<=daysInMonth; d++) {
+                const k = new Date(year, month, d).toISOString().split('T')[0];
+                const hasEvent = events[k] ? `<div class="mt-1 flex flex-wrap gap-0.5">${[...new Set(events[k])].slice(0,2).map(e => `<span class="px-1 bg-indigo-50 text-indigo-500 rounded-[2px] text-[6px] uppercase font-black">${e}</span>`).join('')}</div>` : '';
+                grid.innerHTML += `<div class="large-calendar-day ${k === todayStr ? 'today' : ''}">${d}${hasEvent}</div>`;
             }
         }
 
-        function atualizarHistorico() {
-            const body = document.getElementById('historico-body'); if (!body) return; body.innerHTML = ''; let totalMin = 0; let streakDates = new Set();
-            plannerDays.forEach(day => day.slots.forEach((s, slotIdx) => {
-                const types = [{ k: 'teoria', t: 't_time', l: 'Teoria', c: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' }, { k: 'revisao', t: 'r_time', l: 'Revisão', c: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' }, { k: 'questoes', t: 'q_time', l: 'Questões', c: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' }];
-                types.forEach(type => { if(s[type.k]) { totalMin += (s[type.t] || 0); streakDates.add(day.date);
-                    body.innerHTML += `<tr class="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"><td class="p-6 font-bold text-slate-400 whitespace-nowrap">${day.date}</td><td class="p-6"><span class="${type.c} px-2 py-1 rounded-lg text-[9px] font-black uppercase">${type.l}</span></td><td class="p-6 font-black text-slate-700 dark:text-slate-200">${s.subject || '---'}<br><span class="text-xs font-normal text-slate-400">${s.topic || '---'}</span></td><td class="p-6 font-black text-indigo-600 dark:text-indigo-400 whitespace-nowrap">${formatarTempo(s[type.t])}</td><td class="p-6 text-center"><button onclick="apagarItemHistorico('${day.id}', ${slotIdx}, '${type.k}')" class="bg-rose-50 dark:bg-rose-900/20 p-2 rounded-xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all">✕</button></td></tr>`;
-                }});
+        // --- QUESTÕES ---
+        window.updateQuestaoTopics = () => {
+            const sub = subjects.find(s => s.id === document.getElementById('q-select-subject').value);
+            if(sub) document.getElementById('q-select-topic').innerHTML = sub.topics.map(t => `<option value="${t.id}">${t.text}</option>`).join('');
+        };
+        window.saveQuestionStats = () => {
+            const id = document.getElementById('q-select-topic').value;
+            const cInput = document.getElementById('q-input-correct'), wInput = document.getElementById('q-input-wrong');
+            const c = parseInt(cInput.value) || 0, w = parseInt(wInput.value) || 0;
+            if(!id) return; if(!questionStats[id]) questionStats[id] = { correct: 0, wrong: 0 };
+            questionStats[id].correct += c; questionStats[id].wrong += w;
+            localStorage.setItem('pcap_stats_v14', JSON.stringify(questionStats));
+            cInput.value = 0; wInput.value = 0; renderStatsTable();
+        };
+        function renderQuestaoTab() {
+            const sel = document.getElementById('q-select-subject');
+            if(sel) sel.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            window.updateQuestaoTopics(); renderStatsTable();
+        }
+        function renderStatsTable() {
+            const body = document.getElementById('stats-table-body'); if(!body) return; body.innerHTML = '';
+            let gc = 0, gt = 0;
+            subjects.forEach(s => s.topics.filter(t => questionStats[t.id]).forEach(t => {
+                const st = questionStats[t.id], tot = st.correct + st.wrong, acc = tot > 0 ? Math.round((st.correct/tot)*100) : 0;
+                gc += st.correct; gt += tot;
+                body.innerHTML += `<tr class="border-b border-slate-50"><td class="p-4 pl-6"><div class="text-[8px] font-black uppercase text-indigo-400">${s.name}</div><div class="font-bold text-slate-700">${t.text}</div></td><td class="p-4 text-center font-black text-emerald-500">${st.correct}</td><td class="p-4 text-center font-black text-rose-500">${st.wrong}</td><td class="p-4 text-right font-black ${acc>=80?'text-emerald-500':acc>=60?'text-amber-500':'text-rose-500'}">${acc}%</td></tr>`;
             }));
-            safeSetText('header-hours', Math.floor(totalMin/60) + 'h'); safeSetText('header-streak', `${streakDates.size} Dias`);
-            const goalBar = document.getElementById('goal-week-bar'); if(goalBar) goalBar.style.width = Math.min(100, Math.round((totalMin / 900) * 100)) + '%';
-            const avg = streakDates.size > 0 ? Math.round(totalMin / streakDates.size) : 0; safeSetText('stat-avg-daily', formatarTempo(avg));
+            window.safeSetText('stats-global-accuracy', (gt>0?Math.round((gc/gt)*100):0)+'%'); window.safeSetText('stats-total-correct', gc);
         }
 
-        window.apagarItemHistorico = (did, sidx, type) => { if(confirm("Deseja remover este registo de estudo?")) { const day = plannerDays.find(d => d.id === did); if (day) { day.slots[sidx][type] = false; day.slots[sidx][type.charAt(0)+'_time'] = 0; savePlannerAndReload(); } } }
+        // --- EVOLUÇÃO ---
+        function renderEvolutionTab() {
+            if (typeof Chart === 'undefined') { setTimeout(renderEvolutionTab, 100); return; }
+            const labels = subjects.map(s => s.name);
+            const pData = subjects.map(s => { const t = s.topics.length*4; if(t===0)return 0; let c=0; s.topics.forEach(tp=>{for(let col=1;col<=4;col++)if(localStorage.getItem(`status_${tp.id}_c${col}`))c++;}); return Math.round((c/t)*100); });
+            const aData = subjects.map(s => { let c=0, t=0; s.topics.forEach(tp=>{if(questionStats[tp.id]){c+=questionStats[tp.id].correct; t+=(questionStats[tp.id].correct+questionStats[tp.id].wrong);}}); return t>0?Math.round((c/t)*100):0; });
+            if(charts.radar) charts.radar.destroy();
+            charts.radar = new Chart(document.getElementById('radarChart'), { type: 'radar', data: { labels, datasets: [{ label:'Conclusão', data: pData, backgroundColor: 'rgba(79, 70, 229, 0.1)', borderColor: '#4f46e5', borderWidth: 2 }] }, options: { maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 100, ticks: { display: false } } }, plugins: { legend: { display: false } } } });
+            if(charts.bar) charts.bar.destroy();
+            charts.bar = new Chart(document.getElementById('barChartQuestao'), { type: 'bar', data: { labels, datasets: [{ label:'Precisão', data: aData, backgroundColor: '#10b981', borderRadius: 10 }] }, options: { maintainAspectRatio: false, indexAxis: 'y', scales: { x: { max: 100, beginAtZero: true } }, plugins: { legend: { display: false } } } });
+            if(charts.line) charts.line.destroy();
+            charts.line = new Chart(document.getElementById('lineChartEvolucao'), { type: 'line', data: { labels: dailyHistory.map(h=>h.date), datasets: [{ label:'Progresso', data: dailyHistory.map(h=>h.progress), borderColor: '#4f46e5', fill: true, backgroundColor: 'rgba(79, 70, 229, 0.05)', tension: 0.4 }] }, options: { maintainAspectRatio: false, scales: { y: { max: 100, beginAtZero: true } }, plugins: { legend: { display: false } } } });
+        }
 
-        function initEdital() {
-            const body = document.getElementById('edital-body'); if (!body) return; body.innerHTML = '';
-            subjectsData.forEach((sub, si) => {
-                const colors = colorMap[sub.color] || colorMap.indigo;
-                body.innerHTML += `<tr class="bg-slate-50 dark:bg-slate-900/50 font-black ${colors.text} uppercase text-[10px] tracking-widest border-l-4 border-${sub.color}-500"><td colspan="5" class="p-4">${sub.name}</td></tr>`;
-                sub.topics.forEach((top, ti) => { body.innerHTML += `<tr class="border-b dark:border-slate-700 hover:bg-slate-50/50"><td class="p-5 font-bold text-slate-700 dark:text-slate-300">${top}</td>${[1,2,3,4].map(i => `<td class="text-center"><input type="checkbox" onchange="toggleEdital('${si}', '${ti}', ${i}, this.checked)" ${localStorage.getItem(`pcap_e_${si}_${ti}_${i}`) === 'true' ? 'checked' : ''}></td>`).join('')}</tr>`; });
+        function findTopic(id) { for (let s of subjects) { let t = s.topics.find(t => t.id === id); if(t) return t; } return null; }
+        function saveAndRender() { localStorage.setItem('pcap_master_v14', JSON.stringify(subjects)); render(); }
+        function saveDailySnapshot() { const today = new Date().toLocaleDateString(); let tp = 0, tc = 0; subjects.forEach(s=>{tp+=s.topics.length*4; s.topics.forEach(t=>{for(let c=1;c<=4;c++)if(localStorage.getItem(`status_${t.id}_c${c}`))tc++;});}); const pct = tp===0?0:Math.round((tc/tp)*100); if(!dailyHistory.length || dailyHistory[dailyHistory.length-1].date !== today) { dailyHistory.push({date:today, progress:pct}); if(dailyHistory.length>30) dailyHistory.shift(); localStorage.setItem('pcap_history_v14', JSON.stringify(dailyHistory)); } else { dailyHistory[dailyHistory.length-1].progress = pct; localStorage.setItem('pcap_history_v14', JSON.stringify(dailyHistory)); } }
+
+        function render() {
+            const container = document.getElementById('edital-container'); if(!container) return; container.innerHTML = '';
+            window.safeSetText('main-edital-title', editalTitle);
+            subjects.forEach((subject) => {
+                const colorHex = { blue: 'bg-blue-600', cyan: 'bg-cyan-600', purple: 'bg-purple-600', emerald: 'bg-emerald-600', indigo: 'bg-indigo-600', rose: 'bg-rose-600', amber: 'bg-amber-600', orange: 'bg-orange-600' }[subject.color] || 'bg-indigo-600';
+                const card = document.createElement('div'); card.className = 'subject-card animate-fadeIn';
+                let rowsHtml = subject.topics.map(topic => {
+                    const count = localStorage.getItem(`round_count_${topic.id}`) || 0, heat = Math.min(5, parseInt(count)), heatClass = ['heat-0','heat-1','heat-2','heat-3','heat-4','heat-max'][heat], alert = window.checkReviewAlert(topic.id);
+                    return `<tr class="border-b border-slate-50 last:border-0 group transition-colors"><td class="p-4 md:p-6 flex items-center justify-between"><div class="flex items-center gap-3"><div class="flex items-center gap-1 group/count"><div onclick="window.incrementStudy('${topic.id}')" class="count-badge ${heatClass}">${count}</div><button onclick="window.resetStudyCount('${topic.id}')" class="opacity-0 group-hover/count:opacity-100 text-slate-300 hover:text-rose-500 p-0.5"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button></div><button onclick="window.handleDriveLink('${topic.id}')" class="drive-btn ${topic.drive ? 'active text-emerald-500' : ''} p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg></button><div class="flex flex-col"><span class="text-xs md:text-sm font-semibold text-slate-700 flex items-center gap-2">${topic.text} ${alert ? '<span class="alert-pulse text-[10px]">⚠️</span>' : ''}<button onclick="window.editTopicName('${topic.id}')" class="edit-btn text-slate-200 hover:text-indigo-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></span>${window.getStatusDateLabel(topic.id)}</div></div><button onclick="window.removeTopic('${subject.id}', '${topic.id}')" class="opacity-0 group-hover:opacity-100 text-rose-200 hover:text-rose-600 p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></td>${[1,2,3,4].map(col => `<td class="p-4 text-center"><input type="checkbox" onchange="window.toggleStatus('${topic.id}', ${col}, this.checked)" ${window.getStatus(topic.id, col)} class="mx-auto"></td>`).join('')}</tr>`;
+                }).join('');
+                card.innerHTML = `<div class="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 subject-header"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-2xl ${colorHex} flex items-center justify-center text-white text-xl font-black shadow-lg">${subject.name.charAt(0)}</div><div><div class="flex items-center gap-2"><h3 class="text-xl font-black text-slate-900">${subject.name}</h3><button onclick="window.editSubjectName('${subject.id}')" class="edit-btn text-slate-400 hover:text-indigo-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></div><button onclick="window.removeSubject('${subject.id}')" class="text-[9px] uppercase font-bold text-rose-400 hover:text-rose-600 mt-1 block">Remover Matéria</button></div></div><div class="flex items-center gap-4 w-full md:w-auto"><div class="text-right flex-1 md:flex-none"><div class="text-2xl font-black" id="pct-${subject.id}">0%</div><div class="text-[9px] uppercase font-bold text-slate-400">Progresso</div></div><div class="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div class="h-full ${colorHex} progress-bar-fill" id="bar-${subject.id}" style="width: 0%"></div></div></div></div><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[700px]"><thead><tr class="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100"><th class="p-6">Tópico</th><th class="p-4 text-center">Teoria</th><th class="p-4 text-center">R-24h</th><th class="p-4 text-center">R-7d</th><th class="p-4 text-center">Questões</th></tr></thead><tbody>${rowsHtml}</tbody></table><div class="p-4 bg-slate-50/30 border-t border-slate-50"><button onclick="window.addTopicPrompt('${subject.id}')" class="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:border-indigo-300 hover:text-indigo-500 transition-all">+ Inserir Novo Tópico</button></div></div>`;
+                container.appendChild(card); window.updateSubjectProgress(subject.id);
             });
-        }
-        window.toggleEdital = (si, ti, i, checked) => { localStorage.setItem(`pcap_e_${si}_${ti}_${i}`, checked); atualizarProgressoGlobal(); }
-
-        function atualizarProgressoGlobal() {
-            let tPoss = 0, tCheck = 0, tT = 0, tQ = 0, grid = document.getElementById('progresso-materias-detalhado'); if (grid) grid.innerHTML = '';
-            subjectsData.forEach((sub, si) => {
-                const colors = colorMap[sub.color] || colorMap.indigo; let sPoss = sub.topics.length * 4, sCheck = 0, topicsH = '';
-                sub.topics.forEach((top, ti) => {
-                    let tc = 0; for(let i=1; i<=4; i++) if(localStorage.getItem(`pcap_e_${si}_${ti}_${i}`) === 'true') tc++;
-                    sCheck += tc; const tp = Math.round((tc / 4) * 100); if(tp > 0) tT++;
-                    const qc = (qData.det[sub.name] && qData.det[sub.name][top]) ? (qData.det[sub.name][top].a + qData.det[sub.name][top].e) : 0; if(qc > 0) tQ++;
-                    topicsH += `<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-700"><div class="flex-1"><div class="text-sm font-bold dark:text-slate-200">${top}</div><div class="flex gap-4 mt-1"><div class="text-[10px] font-black uppercase text-slate-400">Etapas: ${tc}/4</div><div class="text-[10px] font-black uppercase text-indigo-400">${qc} Questões</div></div></div><div class="w-full sm:w-48 mt-3 sm:mt-0 flex items-center gap-3"><div class="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full ${colors.bg} progress-bar-fill" style="width: ${tp}%"></div></div><span class="text-xs font-black text-slate-500 w-8">${tp}%</span></div></div>`;
-                });
-                tPoss += sPoss; tCheck += sCheck; const mp = Math.round((sCheck / sPoss) * 100) || 0;
-                if (grid) grid.innerHTML += `<div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden"><div class="p-8 bg-slate-50/80 dark:bg-slate-900/50 border-b dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-2xl ${colors.bg} flex items-center justify-center text-white shadow-lg font-black text-xl">${sub.name.charAt(0)}</div><div><h4 class="text-xl font-black dark:text-white tracking-tight">${sub.name}</h4><p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Desempenho Geral</p></div></div><div class="flex flex-col items-end"><div class="text-3xl font-black dark:text-white">${mp}%</div><div class="w-32 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-1"><div class="h-full ${colors.bg}" style="width: ${mp}%"></div></div></div></div><div class="p-6 space-y-3">${topicsH}</div></div>`;
-            });
-            const global = Math.round((tCheck / tPoss) * 100) || 0; safeSetText('header-perc', global + '%'); safeSetText('progresso-global-pct-aba', global);
-            const bar = document.getElementById('progresso-global-bar-aba'); if (bar) bar.style.width = global + '%';
-            safeSetText('stat-efficiency', tT > 0 ? Math.round((tQ / tT) * 100) + '%' : '0%'); renderResumo();
+            window.updateGlobalProgress(); updateMiniAgenda(); saveDailySnapshot();
         }
 
-        function renderResumo() {
-            const container = document.getElementById('resumo-container'); const empty = document.getElementById('resumo-empty');
-            const search = document.getElementById('resumo-search').value.toLowerCase(); const filter = document.getElementById('resumo-filter').value;
-            if(!container) return; container.innerHTML = ''; let found = 0;
-            subjectsData.forEach((sub, si) => {
-                const colors = colorMap[sub.color] || colorMap.indigo;
-                sub.topics.forEach((top, ti) => {
-                    let tc = 0; for(let i=1; i<=4; i++) if(localStorage.getItem(`pcap_e_${si}_${ti}_${i}`) === 'true') tc++;
-                    const tp = Math.round((tc / 4) * 100);
-                    const qc = (qData.det[sub.name] && qData.det[sub.name][top]) ? (qData.det[sub.name][top].a + qData.det[sub.name][top].e) : 0;
-                    let match = true;
-                    if(filter === 'concluidos' && tp < 100) match = false;
-                    if(filter === 'em-estudo' && (tp === 0 || tp === 100)) match = false;
-                    if(filter === 'pendentes' && tp > 0) match = false;
-                    if(match && (top.toLowerCase().includes(search) || sub.name.toLowerCase().includes(search))) { found++;
-                        container.innerHTML += `<div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-4 animate-fadeIn"><div class="flex justify-between items-start"><span class="text-[9px] font-black uppercase px-2 py-1 ${colors.lightBg} ${colors.darkBg} ${colors.text} rounded-lg">${sub.name}</span><span class="text-[10px] font-black ${tp === 100 ? 'text-emerald-500' : 'text-slate-400'}">${tp}%</span></div><h4 class="font-bold dark:text-white leading-tight min-h-[40px]">${top}</h4><div class="grid grid-cols-2 gap-2 text-center border-t dark:border-slate-700 pt-4"><div><div class="text-[9px] uppercase font-bold text-slate-400">Etapas</div><div class="text-sm font-black dark:text-white">${tc}/4</div></div><div><div class="text-[9px] uppercase font-bold text-slate-400">Questões</div><div class="text-sm font-black dark:text-white">${qc}</div></div></div><div class="h-1 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full ${colors.bg}" style="width: ${tp}%"></div></div></div>`;
-                    }
-                });
-            });
-            if(found === 0) empty.classList.remove('hidden'); else empty.classList.add('hidden');
+        function updateMiniAgenda() {
+            const hList = document.getElementById('revisoes-hoje'); if(!hList) return; hList.innerHTML = ''; let hCount = 0, evs = {};
+            subjects.forEach(s => s.topics.forEach(t => {
+                const sd = localStorage.getItem(`date_study_${t.id}`);
+                if(sd) {
+                    const b = new Date(sd), r24 = new Date(new Date(b).setDate(b.getDate()+1)), r7d = new Date(new Date(b).setDate(b.getDate()+7));
+                    [{d:r24, c:2, n:'24h'}, {d:r7d, c:3, n:'7d'}].forEach(r => {
+                        if(!localStorage.getItem(`status_${t.id}_c${r.c}`)) {
+                            const k = r.d.toISOString().split('T')[0]; if(!evs[k]) evs[k]=[]; evs[k].push({s:s.name, t:t.text, n:r.n});
+                            if(r.d.setHours(0,0,0,0) <= new Date().setHours(0,0,0,0)) { hCount++; hList.innerHTML += `<div class="flex justify-between border-b border-slate-50 pb-1 text-[10px]"><span class="truncate pr-2"><b>${s.name}</b>: ${t.text}</span><span class="text-rose-500 font-black uppercase whitespace-nowrap">${r.n}</span></div>`; }
+                        }
+                    });
+                }
+            }));
+            if(hCount === 0) hList.innerHTML = '<p class="text-slate-400 italic text-center py-2 text-xs">Sem revisões pendentes.</p>';
+            renderMiniCalendar(evs);
         }
 
-        window.renderMateriaisContent = (subjectName) => {
-            const container = document.getElementById('materiais-topics-content'); if(!container) return;
-            const sub = subjectsData.find(s => s.name === subjectName); if(!sub) return;
-            const colors = colorMap[sub.color] || colorMap.indigo;
-            container.innerHTML = `<div class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-sm mb-6 animate-fadeIn"><div class="flex items-center gap-4 mb-8"><div class="w-12 h-12 rounded-2xl ${colors.bg} flex items-center justify-center text-white text-xl font-black shadow-lg">${sub.name.charAt(0)}</div><div><h3 class="text-2xl font-black dark:text-white">${sub.name}</h3><p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Recursos para Estudo</p></div></div><div class="space-y-4">${sub.topics.map(topic => `<div class="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4"><div class="font-bold text-slate-700 dark:text-slate-300">${topic}</div><div class="flex flex-wrap justify-center gap-2"><a href="https://www.youtube.com/results?search_query=PC-AP+${sub.name}+${topic}" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 rounded-xl text-[10px] font-black uppercase tracking-wider hover:scale-105 transition-all"><span>▶️</span> Aula</a><a href="https://www.google.com/search?q=PC-AP+${sub.name}+${topic}+resumo+pdf" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-wider hover:scale-105 transition-all"><span>📄</span> PDF</a><a href="https://www.google.com/search?q=PC-AP+${sub.name}+${topic}+mapa+mental" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-wider hover:scale-105 transition-all"><span>🧠</span> Mapa</a></div></div>`).join('')}</div></div>`;
-            if(window.innerWidth < 768) container.scrollIntoView({ behavior: 'smooth' });
+        function renderMiniCalendar(evs) {
+            const grid = document.getElementById('calendar-grid'); if(!grid) return; grid.innerHTML = '';
+            const now = new Date(), y = now.getFullYear(), m = now.getMonth(), first = new Date(y, m, 1).getDay(), days = new Date(y, m+1, 0).getDate();
+            document.getElementById('calendar-month-label').innerText = `${["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][m]} ${y}`;
+            for(let i=0; i<first; i++) grid.innerHTML += '<div></div>';
+            for(let d=1; d<=days; d++) {
+                const k = new Date(y, m, d).toISOString().split('T')[0], dayEl = document.createElement('div');
+                dayEl.className = `calendar-day ${d===now.getDate()&&m===now.getMonth()?'today':''} ${evs[k]?'has-event':''}`; dayEl.innerText = d;
+                dayEl.onclick = () => {
+                    document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected')); dayEl.classList.add('selected');
+                    const det = document.getElementById('calendar-details'); if(det) det.classList.remove('hidden');
+                    window.safeSetText('selected-date-label', `REVISÕES EM ${d}/${m+1}:`);
+                    const list = document.getElementById('selected-date-list');
+                    if(list) list.innerHTML = evs[k] ? evs[k].map(e => `<div>• <b>${e.s}</b> (${e.n}): ${e.t}</div>`).join('') : '<div class="italic text-slate-400">Livre.</div>';
+                };
+                grid.appendChild(dayEl);
+            }
         }
 
-        function renderMateriaisSubjects() {
-            const list = document.getElementById('materiais-subjects-list'); if(!list) return; list.innerHTML = '';
-            subjectsData.forEach(sub => { const colors = colorMap[sub.color] || colorMap.indigo; list.innerHTML += `<button onclick="renderMateriaisContent('${sub.name}')" class="w-full flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 transition-all text-left group"><div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full ${colors.bg}"></div><span class="font-bold text-sm dark:text-white">${sub.name}</span></div><span class="opacity-0 group-hover:opacity-100 transition-opacity">➡️</span></button>`; });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => { initTheme(); initEdital(); renderPlannerLivre(); initQuestoes(); atualizarHistorico(); atualizarProgressoGlobal(); showTab('planner'); });
+        window.onload = () => { render(); window.showTab('planner'); };
     </script>
 </body>
 </html>
