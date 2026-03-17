@@ -122,7 +122,6 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto">
-        <!-- HEADER -->
         <header class="mb-10 flex flex-col md:flex-row justify-between items-start gap-8">
             <div class="flex-1">
                 <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-widest mb-4 border border-indigo-100">
@@ -159,7 +158,6 @@
             </div>
         </header>
 
-        <!-- NAVEGAÇÃO -->
         <nav class="flex overflow-x-auto gap-2 p-2 bg-white rounded-3xl mb-10 shadow-sm border border-slate-100 no-scrollbar">
             <button onclick="window.showTab('planner')" id="btn-planner" class="tab-btn active-btn flex-none py-3.5 px-8 rounded-2xl font-extrabold text-xs uppercase tracking-widest transition-all">📅 Planner</button>
             <button onclick="window.showTab('agenda')" id="btn-agenda" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 py-3.5 px-8 rounded-2xl font-extrabold text-xs uppercase transition-all">🗓️ Agenda</button>
@@ -168,7 +166,6 @@
             <button onclick="window.showTab('evolucao')" id="btn-evolucao" class="tab-btn flex-none text-slate-500 hover:bg-slate-50 py-3.5 px-8 rounded-2xl font-extrabold text-xs uppercase transition-all">📈 Evolução</button>
         </nav>
 
-        <!-- ABAS -->
         <div id="planner" class="tab-content active">
             <div id="edital-container" class="space-y-8"></div>
         </div>
@@ -265,7 +262,6 @@
             </div>
         </div>
 
-        <!-- MODAL -->
         <div id="timeline-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
             <div class="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl scale-in-center">
                 <h3 class="text-2xl font-black text-slate-800 mb-8 text-center tracking-tight">Nova Tarefa</h3>
@@ -393,11 +389,29 @@
             cInput.value = ''; wInput.value = ''; window.renderStatsTable();
         };
 
+        window.removeQuestionStat = (id) => {
+            if(confirm("Deseja apagar este histórico de treino?")) {
+                delete questionStats[id];
+                localStorage.setItem('pcap_stats_v38', JSON.stringify(questionStats));
+                window.renderStatsTable();
+            }
+        };
+
         window.renderStatsTable = () => {
             const body = document.getElementById('stats-table-body'); if(!body) return; body.innerHTML = ''; let gc=0, gt=0;
             subjects.forEach(s => s.topics.filter(t => questionStats[t.id]).forEach(t => {
                 const st = questionStats[t.id], tot = st.correct + st.wrong, acc = tot > 0 ? Math.round((st.correct/tot)*100) : 0; gc += st.correct; gt += tot;
-                body.innerHTML += `<tr class="border-b border-slate-50"><td class="p-4 pl-6"><div>${s.name}</div><div class="font-bold">${t.text}</div></td><td class="p-4 text-center font-black text-emerald-500">${st.correct}</td><td class="p-4 text-center font-black text-rose-500">${st.wrong}</td><td class="p-4 text-right font-black ${acc>=80?'text-emerald-500':acc>=60?'text-amber-500':'text-rose-500'}">${acc}%</td></tr>`;
+                body.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-50/80 group">
+                    <td class="p-4 pl-6"><div>${s.name}</div><div class="font-bold">${t.text}</div></td>
+                    <td class="p-4 text-center font-black text-emerald-500">${st.correct}</td>
+                    <td class="p-4 text-center font-black text-rose-500">${st.wrong}</td>
+                    <td class="p-4 text-right font-black ${acc>=80?'text-emerald-500':acc>=60?'text-amber-500':'text-rose-500'}">${acc}%</td>
+                    <td class="p-4 text-center">
+                        <button onclick="window.removeQuestionStat('${t.id}')" class="text-rose-300 hover:text-rose-600 transition-all opacity-0 group-hover:opacity-100">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </td>
+                </tr>`;
             }));
             window.safeSetText('stats-global-accuracy', (gt>0?Math.round((gc/gt)*100):0)+'%'); window.safeSetText('stats-total-correct', gc);
         };
